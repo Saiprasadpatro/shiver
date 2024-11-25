@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shiver</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+</head>
+<style>
+    /* Main Styles */
+    :root {
+        --primary-color: #7C3AED;
+        --secondary-color: #4F46E5;
+        --dark-bg: #1F2937;
+        --dark-text: #F9FAFB;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Dark Mode */
+    body.dark {
+        background-color: var(--dark-bg);
+        color: var(--dark-text);
+    }
+
+    body.dark .bg-white {
+        background-color: #374151;
+    }
+
+    body.dark .text-gray-700 {
+        color: #F3F4F6;
+    }
+
+    /* Animations */
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .slide-up {
+        animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Loading Spinner */
+    .loader {
+        border: 3px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 3px solid var(--primary-color);
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Modal Transitions */
+    .modal {
+        transition: opacity 0.25s ease;
+    }
+
+    /* Story Circles */
+    .story-circle {
+        border: 2px solid transparent;
+        background-image: linear-gradient(#fff, #fff), 
+        linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        background-origin: border-box;
+        background-clip: content-box, border-box;
+    }
+
+    /* Custom Toggle Switch */
+    .toggle-switch {
+        position: relative;
+        width: 60px;
+        height: 34px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: var(--primary-color);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+</style>
+<body class="bg-gray-50">
+    <!-- Verification Modal -->
+    <div id="verificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-xl max-w-md w-full p-6 slide-up">
+                <div class="text-center">
+                    <lottie-player src="https://assets2.lottiefiles.com/packages/lf20_szviyjh9.json" 
+                                 background="transparent" speed="1" 
+                                 style="width: 200px; height: 200px; margin: 0 auto;" 
+                                 loop autoplay>
+                    </lottie-player>
+                    <h2 class="text-xl font-bold mt-4">Verify Your Email</h2>
+                    <p class="text-gray-600 mt-2">We've sent a verification link to your email address. Please check your inbox and click the link to verify your account.</p>
+                    <button onclick="resendVerification()" class="mt-4 text-primary-600 hover:text-primary-700">
+                        Resend Verification Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Age Verification Modal -->
+    <div id="ageVerificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-xl max-w-md w-full p-6 slide-up">
+                <h2 class="text-xl font-bold text-center mb-4">Age Verification Required</h2>
+                <p class="text-gray-600 mb-4">Please enter your date of birth to confirm you're 18 or older.</p>
+                <form onsubmit="verifyAge(event)">
+                    <input type="date" required class="w-full rounded-md border-gray-300 mb-4">
+                    <button type="submit" class="w-full bg-primary-600 text-white rounded-md py-2">
+                        Verify Age
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Edit Modal -->
+    <div id="profileEditModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-xl max-w-md w-full p-6 slide-up">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Edit Profile</h2>
+                    <button onclick="toggleProfileEditModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <form onsubmit="updateProfile(event)">
+                    <div class="space-y-4">
+                        <div class="text-center">
+                            <div class="relative inline-block">
+                                <img id="profilePreview" 
+                                     src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
+                                     class="w-24 h-24 rounded-full"
+                                     alt="Profile">
+                                <label class="absolute bottom-0 right-0 bg-gray-100 rounded-full p-2 cursor-pointer hover:bg-gray-200">
+                                    <i class="bi bi-camera"></i>
+                                    <input type="file" class="hidden" accept="image/*" onchange="previewImage(event)">
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Display Name</label>
+                            <input type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Bio</label>
+                            <textarea class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" rows="3"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Website</label>
+                            <input type="url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <button type="submit" class="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Story Modal -->
+    <div id="storyModal" class="fixed inset-0 bg-black bg-opacity-90 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="relative w-full max-w-lg">
+                <div class="flex justify-between items-center absolute top-4 left-4 right-4 z-10">
+                    <div class="flex items-center">
+                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
+                             class="w-8 h-8 rounded-full"
+                             alt="Profile">
+                        <span class="text-white ml-2">Username</span>
+                    </div>
+                    <button onclick="toggleStoryModal()" class="text-white">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div class="story-content">
+                    <!-- Story content will be dynamically added here -->
+                </div>
+                <div class="absolute bottom-4 left-4 right-4 flex justify-between">
+                    <div class="story-progress flex space-x-1">
+                        <!-- Progress bars will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Post Modal -->
+    <div id="newPostModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="bg-white rounded-xl max-w-lg w-full p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Create Post</h2>
+                    <button onclick="toggleNewPostModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div class="flex space-x-4">
+                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
+                         alt="Profile" 
+                         class="w-12 h-12 rounded-full">
+                    <div class="flex-1">
+                        <textarea placeholder="What's happening?"
+                                  class="w-full resize-none border-0 focus:ring-0 text-lg placeholder-gray-500"
+                                  rows="4"></textarea>
+                        <div id="mediaPreview" class="hidden mt-4 relative">
+                            <img src="" alt="Preview" class="rounded-lg max-h-64 w-auto">
+                            <button onclick="removeMedia()" class="absolute top-2 right-2 bg-gray-800 text-white rounded-full p-1">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center mt-4">
+                            <div class="flex space-x-2">
+                                <label class="cursor-pointer text-primary-600 hover:bg-primary-50 p-2 rounded-full">
+                                    <i class="bi bi-image"></i>
+                                    <input type="file" class="hidden" accept="image/*,video/*" onchange="handleMediaUpload(event)">
+                                </label>
+                                <button class="text-primary-600 hover:bg-primary-50 p-2 rounded-full">
+                                    <i class="bi bi-emoji-smile"></i>
+                                </button>
+                                <button class="text-primary-600 hover:bg-primary-50 p-2 rounded-full">
+                                    <i class="bi bi-geo-alt"></i>
+                                </button>
+                            </div>
+                            <button onclick="createPost()" class="bg-primary-600 text-white px-4 py-2 rounded-full hover:bg-primary-700">
+                                Post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="min-h-screen flex">
+        <!-- Left Sidebar -->
+        <nav class="fixed w-64 h-screen border-r border-gray-200 py-4 px-2 hidden lg:block">
+            <div class="flex flex-col h-full">
+                <div class="space-y-2">
+                    <a href="#" class="text-2xl font-bold px-4 py-2">
+                        <i class="bi bi-lightning-charge-fill text-primary-600"></i> Shiver
+                    </a>
+                    <!-- Navigation items -->
+                </div>
+                <div class="mt-auto">
+                    <!-- Theme Toggle -->
+                    <div class="px-4 py-2 flex items-center justify-between">
+                        <span class="font-medium">Dark Mode</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" onchange="toggleTheme()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <!-- User Menu -->
+                    <div class="border-t border-gray-200 mt-2 pt-2">
+                        <button onclick="toggleUserMenu()" class="flex items-center space-x-3 px-4 py-2 w-full hover:bg-gray-100 rounded-full">
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
+                                 alt="Profile"
+                                 class="w-10 h-10 rounded-full">
+                            <div class="flex-1 text-left">
+                                <div class="font-medium">Username</div>
+                                <div class="text-sm text-gray-500">@username</div>
+                            </div>
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Feed -->
+        <main class="flex-1 lg:ml-64">
+            <!-- Header -->
+            <header class="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-gray-200 z-10">
+                <!-- Header content -->
+            </header>
+
+            <!-- Stories -->
+            <div class="p-4 border-b border-gray-200 overflow-x-auto">
+                <div class="flex space-x-4">
+                    <!-- Story items will be dynamically added here -->
+                </div>
+            </div>
+
+            <!-- Posts Feed -->
+            <div class="pb-16 lg:pb-0">
+                <!-- Posts will be dynamically added here -->
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="hidden xl:block w-80 p-4 border-l border-gray-200">
+            <!-- Trending section -->
+            <!-- Who to follow section -->
+        </aside>
+    </div>
+
+<script>
+// Initialize state
+let isAuthenticated = false;
+let currentUser = null;
+let stories = [];
+let posts = [];
+
+// Auth functions
+async function signup(email, password, dateOfBirth) {
+    // Verify age
+    const age = calculateAge(dateOfBirth);
+    if (age < 18) {
+        showError('You must be 18 or older to sign up');
+        return;
+    }
+
+    try {
+        const result = await dbOperation('create', 'users', {
+            email,
+            password: await hashPassword(password),
+            dateOfBirth,
+            verified: false
+        });
+
+        if (result && !result.error) {
+            sendVerificationEmail(email);
+            showVerificationModal();
+        }
+    } catch (error) {
+        showError('Signup failed. Please try again.');
+    }
+}
+
+async function login(email, password) {
+    try {
+        const result = await dbOperation('read', 'users', { email });
+        if (result && result.data.length > 0) {
+            const user = result.data[0];
+            if (!user.verified) {
+                showVerificationModal();
+                return;
+            }
+
+            if (await verifyPassword(password, user.password)) {
+                setCurrentUser(user);
+                hideAuthModal();
+            }
+        }
+    } catch (error) {
+        showError('Login failed. Please try again.');
+    }
+}
+
+// Story functions
+function createStory(mediaFile) {
+    const formData = new FormData();
+    formData.append('media', mediaFile);
+    formData.append('userId', currentUser.id);
+    formData.append('timestamp', new Date().toISOString());
+
+    // Upload story
+    uploadStory(formData);
+}
+
+function viewStory(storyId) {
+    const story = stories.find(s => s.id === storyId);
+    if (story) {
+        showStoryModal(story);
+    }
+}
+
+// Post functions
+async function createPost() {
+    const content = document.querySelector('textarea').value.trim();
+    const mediaPreview = document.getElementById('mediaPreview');
+    const mediaFile = mediaPreview.querySelector('img')?.src;
+
+    if (!content && !mediaFile) return;
+
+    const postData = {
+        content,
+        media: mediaFile,
+        author: currentUser.id,
+        timestamp: new Date().toISOString(),
+        likes: 0,
+        comments: []
+    };
+
+    try {
+        const result = await dbOperation('create', 'posts', postData);
+        if (result && !result.error) {
+            hideNewPostModal();
+            refreshFeed();
+        }
+    } catch (error) {
+        showError('Failed to create post. Please try again.');
+    }
+}
+
+// Profile functions
+async function updateProfile(event) {
+    event.preventDefault();
+    const form = event.target;
+    const profileData = {
+        displayName: form.querySelector('input[type="text"]').value,
+        bio: form.querySelector('textarea').value,
+        website: form.querySelector('input[type="url"]').value,
+        avatar: document.getElementById('profilePreview').src
+    };
+
+    try {
+        const result = await dbOperation('update', 'users', profileData, currentUser.id);
+        if (result && !result.error) {
+            setCurrentUser({ ...currentUser, ...profileData });
+            hideProfileEditModal();
+        }
+    } catch (error) {
+        showError('Failed to update profile. Please try again.');
+    }
+}
+
+// Theme functions
+function toggleTheme() {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+}
+
+// Initialize app
+document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        setCurrentUser(JSON.parse(savedUser));
+    } else {
+        showAuthModal();
+    }
+
+    // Load stories and posts
+    loadStories();
+    loadPosts();
+
+    // Set theme
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark');
+    }
+});
+</script>
+</body>
+</html>
